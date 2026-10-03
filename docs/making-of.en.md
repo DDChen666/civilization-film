@@ -197,7 +197,7 @@ It became the last row of the list and the last item of the full-history replay.
 
 - **Claude Opus 5.5**, running in **Claude Code**
 - **Picture**: plain Canvas 2D with a hand-written 3D projection (`src/engine.js`). No WebGL and no frameworks
-- **Rendering**: Node.js and playwright-core drive Google Chrome for screenshots; ffmpeg encodes
+- **Rendering**: Node.js and playwright-core drive Google Chrome; ffmpeg muxes. During production every frame was a screenshot (15.5 minutes for the film); after release it switched to hardware encoding (1 minute 41 seconds), see [Fast rendering](fast-render.en.md)
 - **Score**: Python, numpy and scipy
 - **Maps**: Natural Earth (public domain)
 

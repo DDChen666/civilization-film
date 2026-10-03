@@ -29,14 +29,16 @@ What the rule buys:
 ## 2. The render pipeline (`render.mjs`)
 
 ```
-local static server ─┬─ Chrome 1: frames 0–744    ─┐
-                     ├─ Chrome 2: frames 745–1489 ─┤
-                     ├─ …                          ├─ ffmpeg concat → tag BT.709 → mux score (AAC 256k) → mp4
-                     └─ Chrome 6: …                ─┘
-per frame: 4 sub-frames within a 180° shutter → ffmpeg tmix average → one motion-blurred frame
+local static server ─┬─ Chrome 1: frames 0–1489    ─┐
+                     ├─ Chrome 2: frames 1490–2979 ─┼─ H.264 segments concatenated → ffmpeg muxes, adds score (AAC 256k), tags BT.709 → mp4
+                     └─ Chrome 3: frames 2980–4469 ─┘
+per frame (inside the page): 4 sub-frames within a 180° shutter → running mean on one canvas → VideoFrame → hardware encoder (WebCodecs → VideoToolbox)
 ```
 
-- Screenshots come from playwright-core driving the Google Chrome already installed on your machine. No extra browser is downloaded.
+- **fast engine (default)**: no screenshots. The page accumulates the motion blur itself and hands each frame to the Mac's hardware encoder; encoded data goes back to Node every few megabytes. It is used automatically when the page has a single canvas and no other visible elements. Three Chrome instances by default (fastest on an M3). The full film renders in about 1 minute 41 seconds at 1080p.
+- **shot engine**: the original approach, a screenshot per draw piped to ffmpeg. Used automatically when the page has HTML elements, or on request with `--engine shot`. The full film takes about 15 and a half minutes.
+- Why it works this way, how the bottlenecks were measured, and a comparison with HyperFrames: see [Fast rendering](fast-render.en.md).
+- It drives the Google Chrome already installed on your machine; no extra browser is downloaded.
 - The color space must be tagged BT.709, or QuickTime will wash out the colors.
 - Modes: `sheet` (keyframe overview), `strip` (consecutive frames around a moment), `video`, and `events` (export cut times).
 
@@ -45,7 +47,7 @@ per frame: 4 sub-frames within a 180° shutter → ffmpeg tmix average → one m
 - **Coordinates**: the origin is Babylon (44.42° E, 32.54° N). x points east, y north and z up, in meters.
 - **Distant geography sits on a sphere with the Earth's real radius** (`E.makeGeo`). When the camera pulls back far enough, the ground curves into a globe by itself, with no switch between two drawing methods.
 - **Only three primitives** (`src/engine.js`):
-  - `E.line`: lines, optionally hidden behind the Earth (`occlude`)
+  - `E.line`: lines, optionally hidden behind the Earth (`occlude`). Dashed lines are clipped to the screen first (`dashLine`); otherwise long lines running off screen are dozens of times slower
   - `E.face`: solid faces, back-face culled by their normals, painted in the background color so they hide the lines behind them
   - Points of light: pre-rendered glow sprites, composited additively
 - **Glow**: each layer is drawn on a transparent canvas, then a blurred copy of itself is added on top (`E.makeLayers`).

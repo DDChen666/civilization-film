@@ -113,6 +113,7 @@
     return n;
   }
   function line(g, cam, pts, o = {}) {
+    if (o.dash) return dashLine(g, cam, pts, o);
     g.beginPath();
     if (!trace(g, cam, pts, o)) return;
     g.strokeStyle = o.color || '#fff'; g.globalAlpha = o.alpha ?? 1; g.lineWidth = o.width || 1;
@@ -121,6 +122,40 @@
     g.stroke();
     if (o.dash) g.setLineDash([]);
     g.globalAlpha = 1;
+  }
+  /** 虛線：先把投影後的折線裁到畫面（外加一點邊）裡，再一段一段描。
+   *  瀏覽器會把整條路徑都切成虛線，包括畫面外很遠的部分；一條延伸到地平線外的河，一格就要切幾百萬段（一格 400 毫秒）。
+   *  裁掉的部分用 lineDashOffset 補回長度，所以看得到的虛線跟整條描的時候一模一樣。 */
+  function dashLine(g, cam, pts, o) {
+    const subs = []; let cur = null;
+    const rec = { moveTo(x, y) { cur = [x, y]; subs.push(cur); }, lineTo(x, y) { if (!cur) { cur = [x, y]; subs.push(cur); } else cur.push(x, y); } };
+    if (!trace(rec, cam, pts, o)) return;
+    const pat = o.dash.length % 2 ? o.dash.concat(o.dash) : o.dash, PL = pat.reduce((a, b) => a + b, 0);
+    const m = 48 + 2 * (o.width || 1), X0 = -m, Y0 = -m, X1 = (cam.W || 1920) + m, Y1 = (cam.H || 1080) + m;
+    g.strokeStyle = o.color || '#fff'; g.globalAlpha = o.alpha ?? 1; g.lineWidth = o.width || 1;
+    g.lineCap = o.cap || 'round'; g.lineJoin = 'round'; g.setLineDash(o.dash);
+    const off0 = o.dashOffset ? o.dashOffset : g.lineDashOffset;             // 跟 line() 一樣：沒給偏移就沿用畫布上一次留下的值（舊行為，成片依賴它）
+    const stroke = (piece, L) => { g.beginPath(); g.moveTo(piece[0], piece[1]); for (let i = 2; i < piece.length; i += 2) g.lineTo(piece[i], piece[i + 1]); g.lineDashOffset = PL > 0 ? (((off0 + L) % PL) + PL) % PL : off0; g.stroke(); };
+    for (const sp of subs) {                                                    // 每一條子路徑的虛線從頭算（Chrome 實測如此）
+      let L = 0, piece = null, pieceL = 0;
+      for (let i = 0; i + 3 < sp.length; i += 2) {
+        const ax = sp[i], ay = sp[i + 1], dx = sp[i + 2] - ax, dy = sp[i + 3] - ay, len = Math.hypot(dx, dy);
+        let t0 = 0, t1 = 1, ok = true;                                          // Liang–Barsky：線段落在框裡的那一截
+        for (const [p, q] of [[-dx, ax - X0], [dx, X1 - ax], [-dy, ay - Y0], [dy, Y1 - ay]]) {
+          if (p === 0) { if (q < 0) { ok = false; break; } continue; }
+          const r = q / p;
+          if (p < 0) { if (r > t1) { ok = false; break; } if (r > t0) t0 = r; } else { if (r < t0) { ok = false; break; } if (r < t1) t1 = r; }
+        }
+        if (ok) {
+          if (!piece || t0 > 0) { if (piece) stroke(piece, pieceL); piece = [ax + t0 * dx, ay + t0 * dy]; pieceL = L + t0 * len; }
+          piece.push(ax + t1 * dx, ay + t1 * dy);
+          if (t1 < 1) { stroke(piece, pieceL); piece = null; }
+        } else if (piece) { stroke(piece, pieceL); piece = null; }
+        L += len;
+      }
+      if (piece) stroke(piece, pieceL);
+    }
+    g.setLineDash([]); g.lineDashOffset = off0; g.globalAlpha = 1;
   }
   /** 折線只畫前面 k（0..1）這一段：東西「被畫出來」的動作用它。 */
   function partial(pts, k) {

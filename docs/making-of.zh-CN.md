@@ -197,7 +197,7 @@ Claude 当时的判断是**还不算没问题**，有两件事要先做：
 
 - **Claude Opus 5.5**，在 **Claude Code** 里运行
 - **画面**：纯 Canvas 2D，加上自己写的三维投影（`src/engine.js`），没有用 WebGL 或任何框架
-- **输出**：Node.js + playwright-core 驱动 Google Chrome 截图，ffmpeg 编码
+- **输出**：Node.js + playwright-core 驱动 Google Chrome，ffmpeg 封装。制作时是逐帧截图（整片 15 分半）；公开后改成硬件编码（1 分 41 秒），见[快速输出](fast-render.zh-CN.md)
 - **配乐**：Python + numpy + scipy
 - **地图**：Natural Earth（公有领域）
 

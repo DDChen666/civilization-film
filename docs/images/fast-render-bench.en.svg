@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="960" height="320" font-family="EB Garamond, Georgia, serif">
+<rect width="960" height="320" fill="#0d0b0c" rx="8"/>
+<text x="24" y="34" fill="#efe4cf" font-size="17">Total render time, same 30 s clip (900 frames)</text>
+<text x="318" y="83" fill="#9b907f" font-size="14" text-anchor="end">HyperFrames, default</text>
+<rect x="330" y="68" width="522.7" height="22" fill="#7d8a99" rx="3"/>
+<text x="860.7" y="84" fill="#efe4cf" font-size="14">84 s</text>
+<text x="318" y="127" fill="#9b907f" font-size="14" text-anchor="end">HyperFrames + hardware encoding</text>
+<rect x="330" y="112" width="379.6" height="22" fill="#7d8a99" rx="3"/>
+<text x="717.6" y="128" fill="#efe4cf" font-size="14">61 s</text>
+<text x="318" y="171" fill="#9b907f" font-size="14" text-anchor="end">HyperFrames + hardware encoding, 4 workers</text>
+<rect x="330" y="156" width="311.1" height="22" fill="#7d8a99" rx="3"/>
+<text x="649.1" y="172" fill="#efe4cf" font-size="14">50 s</text>
+<text x="318" y="215" fill="#efe4cf" font-size="14" text-anchor="end">This project</text>
+<rect x="330" y="200" width="136.9" height="22" fill="#f6bd62" rx="3"/>
+<text x="474.9" y="216" fill="#efe4cf" font-size="14">22 s</text>
+<text x="318" y="259" fill="#efe4cf" font-size="14" text-anchor="end">This project + motion blur (4 draws per frame)</text>
+<rect x="330" y="244" width="304.9" height="22" fill="#f6bd62" rx="3"/>
+<text x="642.9" y="260" fill="#efe4cf" font-size="14">49 s</text>
+<text x="24" y="306" fill="#9b907f" font-size="11">Apple M3 16 GB · 1080p30 · HyperFrames v0.8.115</text></svg>

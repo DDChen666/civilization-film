@@ -8,9 +8,10 @@
   "scripts": {
     "score": "python3 score.py",
     "preview": "node render.mjs video --html \"stage.html?lang=en\" --from 99.43 --to 109.71 --audio audio/score.wav --out out/preview_en.mp4",
-    "render:tc": "node render.mjs video --html \"stage.html?lang=tc\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_zh-TW.mp4",
-    "render:sc": "node render.mjs video --html \"stage.html?lang=sc\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_zh-CN.mp4",
-    "render:en": "node render.mjs video --html \"stage.html?lang=en\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_en.mp4",
+    "render:tc": "node render.mjs video --html \"stage.html?lang=tc\" --audio audio/score.wav --out out/civilization_zh-TW.mp4",
+    "render:sc": "node render.mjs video --html \"stage.html?lang=sc\" --audio audio/score.wav --out out/civilization_zh-CN.mp4",
+    "render:en": "node render.mjs video --html \"stage.html?lang=en\" --audio audio/score.wav --out out/civilization_en.mp4",
+    "render:4k": "node render.mjs video --final --html \"stage.html?lang=en\" --audio audio/score.wav --out out/civilization_en_4k60.mp4",
     "check": "sh tools/check.sh"
   },
   "dependencies": {

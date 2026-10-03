@@ -25,13 +25,15 @@ Project page, with a language switch: <https://ddchen666.github.io/civilization-
 - **Who did what.** **Claude Opus 5.5**, working in **Claude Code**, made all of the visuals, the music, the on-screen text and the milestone list. The director, **欸不是**, set the direction and reviewed the film at each checkpoint. It took about four and a half hours from the first message to all three language versions being rendered.
 - **No assets at all.** The film uses no images, video, 3D models, sound samples or stock music. The map data is public-domain Natural Earth, and the fonts are open-source Noto Serif and EB Garamond.
 - **Sound and picture share one timeline.** `score.py` writes the score first. At the same time it writes out the time of every drum hit and every theme note to `data/audio.json`. The visuals read only that file, so there is not a single hand-typed second anywhere in the code.
-- **Fully reproducible.** Every render of the same code produces a bit-identical score and identical frames. See [Reproduce it](#reproduce-it) for how this was checked.
+- **Reproducible.** The score is bit-identical on every synthesis. The picture is a pure function of time, and a fresh render of the full film is visually indistinguishable from the release. See [Reproduce it](#reproduce-it) for how this was checked.
+- **Fast to render.** Canvas-only frames go straight to the Mac's hardware encoder, so the full film renders in about 1 minute 41 seconds at 1080p. For how it got there from 15 minutes, see [Fast rendering](docs/fast-render.en.md).
 
 | Document | What's inside |
 |---|---|
 | [Making of](docs/making-of.en.md) | What the director said at each step, how Claude decided, which decisions were overturned, and before/after comparisons |
 | [How it works](docs/how-it-works.en.md) | How one camera covers 7.5 orders of magnitude, how milestones lock to the beat, and how the score is built up layer by layer |
 | [The 176 milestones](docs/fact-check.en.md) | Year, place and names in three languages for every milestone, plus its fact-check status |
+| [Fast rendering: from 15 minutes to 1:41](docs/fast-render.en.md) | Measure first: the screenshot bottleneck, hardware encoding, a drawing trap hidden in dashed lines, and a measured comparison with HyperFrames |
 
 ## Stills
 
@@ -63,11 +65,11 @@ npm run preview                  # try 10 seconds first → out/preview_en.mp4 (
 npm run render:en                # the full film in English → out/civilization_en.mp4
 ```
 
-- `npm run render:tc` renders Traditional Chinese and `npm run render:sc` renders Simplified Chinese. The full film takes about 15 minutes on an Apple M3.
+- `npm run render:tc` renders Traditional Chinese, `npm run render:sc` renders Simplified Chinese, and `npm run render:4k` renders 4K60. The full film takes about 2 minutes at 1080p on an Apple M3; 4K60 is estimated at 20–30 minutes.
 - To watch without rendering, run `python3 -m http.server` and open <http://localhost:8000/player.html>.
 - To measure your render, run `npm run check -- out/civilization_en.mp4`. It writes a contact sheet and prints loudness, rhythm and audio-visual sync figures.
 
-**Verified before release.** The steps above were run once from an empty folder. The regenerated score has the same SHA-1 as the released one. A 10-second test render was compared frame by frame against the released video: the average PSNR is 45 dB, and the only differences come from video compression.
+**Verified** (2026-10-04, current code). The steps above were run from an empty folder. The regenerated score has the same SHA-1 as the released one. The full film was rendered in all three languages, 4,470 frames each with none missing, in 101 s (Traditional Chinese), 123 s (Simplified Chinese) and 116 s (English). Compared frame by frame with the released videos, the average PSNR is 44 dB in every case; the differences come from video compression and are invisible side by side.
 
 ## Project layout
 
@@ -75,7 +77,7 @@ npm run render:en                # the full film in English → out/civilization
 stage.html          The composition page: given any time t, it draws the same frame (window.__seek)
 player.html         The browser player: drives stage.html from the score's playback time
 index.html          Project page (three languages)
-render.mjs          Video renderer: parallel Chrome screenshots, sub-frame motion blur, ffmpeg encoding
+render.mjs          Video renderer: parallel Chrome drawing, sub-frame motion blur, Mac hardware encoding (screenshots when the page has HTML elements)
 score.py            The score: every instrument, every section, every layer
 scorekit.py         Synth and mixer: oscillators, filters, loudness normalization, and the timeline output
 src/
