@@ -1,0 +1,5 @@
+# score.py / scorekit.py (music) and tools/ (measurement, map data prep)
+numpy>=2.0
+scipy>=1.13
+Pillow>=10.0          # tools/prep_geo.py only
+matplotlib>=3.8       # optional: tools/sync.py --plot

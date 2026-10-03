@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%225%22 fill=%22%23f6bd62%22/%3E%3C/svg%3E" />
+<title>Civilization Player</title>
+<meta name="description" content="The film drawn live in your browser, frame by frame, from the source code — synchronized to the score." />
+<style>
+  /* 播放器：把 stage.html（決定論的合成頁）放進 iframe，每一格用 audio.currentTime 呼叫 __seek(t)。
+     不是影片檔：畫面是程式即時畫的。stage.html 本身一行都沒改，輸出影片時用的是同一頁。 */
+  :root {
+    --bg: #050406; --panel: #0d0b0c; --ink: #efe4cf; --dim: #9b907f; --line: #2a2420; --gold: #f6bd62; --ochre: #e8502a;
+    --serif: "Noto Serif TC", "Noto Serif SC", "EB Garamond", "Songti TC", "Songti SC", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; max-width: 1280px; width: 100%; margin: 0 auto; }
+  header a { color: var(--dim); text-decoration: none; font-size: 15px; }
+  header a:hover { color: var(--ink); }
+  .lang { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .lang button { font: inherit; font-size: 14px; color: var(--dim); background: none; border: 0; padding: 6px 12px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
+  main { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 16px 32px; }
+  .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #050406; overflow: hidden; border-radius: 6px; }
+  .frame iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .veil { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #cfc3ae; background: #050406; font-size: 15px; transition: opacity .4s; }
+  .veil.off { opacity: 0; pointer-events: none; }
+  .veil small { color: #7d7364; font-size: 13px; }
+  .big { position: absolute; inset: 0; margin: auto; width: 84px; height: 84px; border-radius: 50%; border: 1px solid rgba(239,228,207,.5); background: rgba(5,4,6,.55); color: #efe4cf; font-size: 28px; cursor: pointer; display: none; }
+  .big.show { display: block; }
+  .controls { display: flex; align-items: center; gap: 14px; padding: 14px 0 6px; }
+  .controls button { font: inherit; width: 40px; height: 40px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; font-size: 15px; }
+  .controls button:disabled { opacity: .4; cursor: default; }
+  .time { font-variant-numeric: tabular-nums; color: var(--dim); font-size: 14px; min-width: 92px; }
+  input[type=range] { flex: 1; min-width: 0; accent-color: var(--gold); }
+  .chapters { display: flex; flex-wrap: wrap; gap: 6px 4px; padding: 4px 0 0; }
+  .chapters button { font: inherit; font-size: 13px; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+  .chapters button.on { color: var(--ink); border-color: var(--gold); }
+  .note { color: var(--dim); font-size: 14px; line-height: 1.7; max-width: 760px; margin: 18px 0 0; }
+  .note kbd { font-family: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+  @media (max-width: 560px) { .time { min-width: 0; font-size: 12px; } .controls { gap: 10px; } }
+</style>
+</head>
+<body>
+<header>
+  <a id="home" href="./">← Civilization</a>
+  <div class="lang" role="group" aria-label="Language">
+    <button data-lang="tc">繁體</button><button data-lang="sc">简体</button><button data-lang="en">English</button>
+  </div>
+</header>
+<main>
+  <div class="frame" id="frame">
+    <iframe id="stage" title="Civilization" scrolling="no" tabindex="-1"></iframe>
+    <div class="veil" id="veil"><span id="veilText"></span><small id="veilSub"></small></div>
+    <button class="big" id="big" aria-label="Play">▶</button>
+  </div>
+  <div class="controls">
+    <button id="play" aria-label="Play" disabled>▶</button>
+    <span class="time" id="time">0:00 / 2:29</span>
+    <input type="range" id="seek" min="0" max="149" step="0.01" value="0" aria-label="Seek" />
+  </div>
+  <div class="chapters" id="chapters"></div>
+  <p class="note" id="note"></p>
+</main>
+<audio id="au" preload="auto"></audio>
+<script>
+'use strict';
+const UI = {
+  tc: { home: '← 人類大歷史', loading: '正在載入字體與地圖…', sub: '第一次開啟要下載約 30 MB', play: '播放', pause: '暫停',
+        note: '這不是影片檔。你看到的每一格，都是 <code>src/</code> 裡的程式依照配樂的時間在你的瀏覽器裡即時畫出來的；輸出影片用的也是同一頁。<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 前後五秒。電腦效能不足時畫面可能掉格，正式影片沒有這個問題。' },
+  sc: { home: '← 人类大历史', loading: '正在加载字体与地图…', sub: '第一次打开要下载约 30 MB', play: '播放', pause: '暂停',
+        note: '这不是视频文件。你看到的每一帧，都是 <code>src/</code> 里的代码按照配乐的时间在你的浏览器里实时画出来的；输出视频用的也是同一页。<kbd>空格</kbd> 播放／暂停，<kbd>←</kbd><kbd>→</kbd> 前后五秒。电脑性能不足时画面可能掉帧，正式视频没有这个问题。' },
+  en: { home: '← Civilization', loading: 'Loading fonts and map data…', sub: 'About 30 MB on first load', play: 'Play', pause: 'Pause',
+        note: 'This is not a video file. Every frame you see is drawn live in your browser by the code in <code>src/</code>, timed to the score — the same page the video was rendered from. <kbd>Space</kbd> play / pause, <kbd>←</kbd><kbd>→</kbd> skip five seconds. On slower machines frames may drop; the rendered video does not.' },
+};
+// 段落（與 data/audio.json 的 sections 相同）
+const CHAPTERS = [[0, '手', '手', 'Hand'], [6.86, '火', '火', 'Fire'], [20.57, '田', '田', 'Field'], [34.29, '城', '城', 'City'], [48.0, '路', '路', 'Road'],
+  [61.71, '海', '海', 'Sea'], [75.43, '機', '机', 'Machine'], [89.14, '家', '家', 'Home'], [99.43, '網', '网', 'Network'], [140.57, '終', '终', 'End']];
+const $ = (id) => document.getElementById(id);
+const au = $('au'), stage = $('stage'), seek = $('seek'), frame = $('frame');
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const q = new URLSearchParams(location.search);
+const guess = () => { const n = (navigator.language || '').toLowerCase(); return n.startsWith('zh') ? (/(cn|sg|hans)/.test(n) ? 'sc' : 'tc') : 'en'; };
+let lang = ['tc', 'sc', 'en'].includes(q.get('lang')) ? q.get('lang') : (store.get('civ-lang') || guess());
+let draw = null, dur = 149, token = 0;
+
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function fit() { stage.style.transform = `scale(${frame.clientWidth / 1920})`; }
+addEventListener('resize', fit); fit();
+
+function paintUI() {
+  const u = UI[lang];
+  document.documentElement.lang = { tc: 'zh-Hant', sc: 'zh-Hans', en: 'en' }[lang];
+  $('home').textContent = u.home; $('home').href = `./?lang=${lang}`;
+  $('note').innerHTML = u.note; $('veilText').textContent = u.loading; $('veilSub').textContent = u.sub;
+  document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  const i = { tc: 1, sc: 2, en: 3 }[lang];
+  $('chapters').innerHTML = CHAPTERS.map((c) => `<button data-t="${c[0]}">${c[i]}</button>`).join('');
+  syncButtons();
+}
+function syncButtons() {
+  const playing = !au.paused;
+  $('play').textContent = playing ? '❚❚' : '▶'; $('play').setAttribute('aria-label', UI[lang][playing ? 'pause' : 'play']);
+  $('big').classList.toggle('show', !!draw && !playing && au.currentTime < 0.05);
+}
+function show(t) {
+  if (draw) draw(t);
+  seek.value = t; $('time').textContent = `${fmt(t)} / ${fmt(dur)}`;
+  let k = 0; CHAPTERS.forEach((c, j) => { if (t >= c[0] - 0.01) k = j; });
+  document.querySelectorAll('#chapters button').forEach((b, j) => b.classList.toggle('on', j === k));
+}
+async function load() {
+  const my = ++token; draw = null;
+  $('veil').classList.remove('off'); $('play').disabled = true;
+  const t = au.currentTime;
+  stage.src = `stage.html?lang=${lang}&t=${t.toFixed(3)}`;
+  await new Promise((r) => (stage.onload = r));
+  const w = stage.contentWindow;
+  await w.__ready;
+  if (my !== token) return;
+  draw = w.__seek; dur = w.__meta.dur; seek.max = dur;
+  $('veil').classList.add('off'); $('play').disabled = false;
+  show(au.currentTime); syncButtons();
+}
+function toggle() { if (!draw) return; if (au.paused) { if (au.currentTime >= dur - 0.05) au.currentTime = 0; au.play(); } else au.pause(); }
+
+(function tick() { if (draw && !au.paused) show(au.currentTime); requestAnimationFrame(tick); })();
+au.addEventListener('play', syncButtons); au.addEventListener('pause', syncButtons); au.addEventListener('ended', syncButtons);
+$('play').onclick = toggle; $('big').onclick = toggle; frame.onclick = (e) => { if (e.target === frame || e.target === $('veil')) toggle(); };
+seek.oninput = () => { au.currentTime = +seek.value; show(+seek.value); syncButtons(); };
+$('chapters').onclick = (e) => { const b = e.target.closest('button'); if (b) { au.currentTime = +b.dataset.t; show(+b.dataset.t); syncButtons(); } };
+document.querySelectorAll('.lang button').forEach((b) => (b.onclick = () => {
+  if (b.dataset.lang === lang) return;
+  lang = b.dataset.lang; store.set('civ-lang', lang);
+  const u = new URL(location.href); u.searchParams.set('lang', lang); history.replaceState(null, '', u);
+  const was = !au.paused; au.pause(); paintUI();
+  load().then(() => { if (was) au.play(); });
+}));
+addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' && e.key !== ' ') return;
+  if (e.key === ' ') { e.preventDefault(); toggle(); }
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { au.currentTime = Math.max(0, Math.min(dur, au.currentTime + (e.key === 'ArrowRight' ? 5 : -5))); show(au.currentTime); }
+});
+// 配樂整段先載進記憶體：有些本機伺服器（例如 python -m http.server）不支援分段讀取，音訊就無法拖動
+const audioReady = fetch('audio/score.m4a').then((r) => r.blob()).then((b) => { au.src = URL.createObjectURL(b); });
+paintUI(); Promise.all([audioReady, load()]).then(() => { if (q.get('t')) { au.currentTime = +q.get('t'); show(au.currentTime); } });
+</script>
+</body>
+</html>

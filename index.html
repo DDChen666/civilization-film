@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Civilization · 人類大歷史</title>
+<meta name="description" content="A 149-second film about human civilization. Every frame drawn by code, every note written by code — by Claude Opus 5.5 in Claude Code." />
+<meta property="og:title" content="Civilization · 人類大歷史" />
+<meta property="og:description" content="A 149-second film about human civilization, drawn and scored entirely in code by Claude Opus 5.5." />
+<meta property="og:image" content="docs/images/stills_en.jpg" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%225%22 fill=%22%23f6bd62%22/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  /* 專案首頁。三種語言用同一份版面，字串在下面的 T 裡；?lang=tc|sc|en 或右上角切換。片子本身是暗的，這頁也固定用暗色。 */
+  :root {
+    --bg: #050406; --panel: #0e0c0d; --ink: #efe4cf; --body: #d9cfbd; --dim: #9b907f; --line: #2a2420;
+    --gold: #f6bd62; --ochre: #e8502a; --lapis: #3f93e0; --ice: #8fd0ff;
+    --serif-en: "EB Garamond", Georgia, serif;
+    --serif-tc: "Noto Serif TC", "Songti TC", serif;
+    --serif-sc: "Noto Serif SC", "Songti SC", serif;
+    --font: var(--serif-en);
+  }
+  html[lang="zh-Hant"] { --font: var(--serif-tc); }
+  html[lang="zh-Hans"] { --font: var(--serif-sc); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--body); font-family: var(--font); }
+  body { font-size: 17px; line-height: 1.75; }
+  html[lang="en"] body { font-size: 19px; line-height: 1.6; }
+  a { color: var(--ink); text-decoration-color: rgba(246,189,98,.5); text-underline-offset: 3px; }
+  a:hover { color: var(--gold); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(5,4,6,.86); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(42,36,32,.6); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; }
+  .brand { color: var(--ink); text-decoration: none; font-size: 18px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .right { display: flex; align-items: center; gap: 14px; flex: none; }
+  .gh { color: var(--dim); text-decoration: none; font-size: 15px; }
+  .lang { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .lang button { font: inherit; font-size: 14px; line-height: 1; color: var(--dim); background: none; border: 0; padding: 8px 11px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
+  .hero { padding: 64px 0 24px; }
+  h1 { font-weight: 500; color: var(--ink); font-size: clamp(40px, 7vw, 72px); line-height: 1.1; margin: 0 0 18px; letter-spacing: .01em; }
+  h1 small { display: block; font-size: .36em; color: var(--dim); letter-spacing: .08em; margin-top: 10px; }
+  .lede { font-size: clamp(18px, 2.2vw, 22px); color: var(--ink); max-width: 760px; margin: 0 0 10px; }
+  .sub { color: var(--dim); max-width: 760px; margin: 0; }
+  .hero-img { margin: 36px 0 8px; border-radius: 6px; overflow: hidden; background: #000; }
+  .hero-img img { display: block; width: 100%; height: auto; }
+  .cap { color: var(--dim); font-size: 14px; margin: 0; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 16px; background: var(--panel); }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn.primary:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+  section { padding: 56px 0 8px; }
+  h2 { color: var(--ink); font-weight: 500; font-size: 28px; margin: 0 0 18px; }
+  .points { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; margin: 0; padding: 0; list-style: none; }
+  .points li h3 { color: var(--ink); font-weight: 600; font-size: 18px; margin: 0 0 6px; }
+  html[lang="en"] .points li h3 { font-size: 20px; }
+  .points li p { margin: 0; }
+  .docs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 28px; }
+  .doc { display: block; padding: 18px 20px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; background: var(--panel); }
+  .doc b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+  .doc span { color: var(--dim); font-size: 15px; line-height: 1.6; display: block; }
+  .doc:hover { border-color: var(--gold); }
+  .stills img { display: block; width: 100%; height: auto; border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  td { border-top: 1px solid var(--line); padding: 12px 10px 12px 0; vertical-align: top; }
+  td:first-child { color: var(--dim); white-space: nowrap; width: 1%; padding-right: 24px; }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-size: 14px; line-height: 1.7; color: #e9dfcc; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .note { color: var(--dim); font-size: 15px; }
+  footer { margin-top: 72px; border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--dim); font-size: 15px; }
+  footer p { margin: 4px 0; }
+  @media (max-width: 560px) {
+    .gh { display: none; }
+    .hero { padding-top: 40px; }
+    td:first-child { white-space: normal; width: 34%; padding-right: 12px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#" data-t="brand"></a>
+    <div class="right">
+      <a class="gh" href="https://github.com/DDChen666/civilization-film">GitHub</a>
+      <div class="lang" role="group" aria-label="Language">
+        <button data-lang="tc">繁體</button><button data-lang="sc">简体</button><button data-lang="en">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1><span data-t="title"></span><small data-t="title2"></small></h1>
+    <p class="lede" data-t="lede"></p>
+    <p class="sub" data-t="sub"></p>
+    <div class="cta">
+      <a class="btn primary" id="playLink" href="player.html" data-t="play"></a>
+      <a class="btn" href="https://www.bilibili.com/video/BV1Fsa66cENq/">Bilibili</a>
+      <a class="btn" href="https://x.com/chen79639ddc/status/2105657578793672722">X</a>
+      <a class="btn" href="https://github.com/DDChen666/civilization-film/releases" data-t="download"></a>
+    </div>
+    <div class="hero-img"><img id="heroGif" src="docs/images/pullback_en.gif" width="640" height="360" alt="" /></div>
+    <p class="cap" data-t="cap"></p>
+  </div>
+
+  <section>
+    <h2 data-t="madeH"></h2>
+    <ul class="points">
+      <li><h3 data-t="p1h"></h3><p data-t="p1"></p></li>
+      <li><h3 data-t="p2h"></h3><p data-t="p2"></p></li>
+      <li><h3 data-t="p3h"></h3><p data-t="p3"></p></li>
+      <li><h3 data-t="p4h"></h3><p data-t="p4"></p></li>
+    </ul>
+    <div class="docs">
+      <a class="doc" data-doc="making-of"><b data-t="d1"></b><span data-t="d1s"></span></a>
+      <a class="doc" data-doc="how-it-works"><b data-t="d2"></b><span data-t="d2s"></span></a>
+      <a class="doc" data-doc="fact-check"><b data-t="d3"></b><span data-t="d3s"></span></a>
+    </div>
+  </section>
+
+  <section class="stills">
+    <h2 data-t="stillsH"></h2>
+    <img id="stills" src="docs/images/stills_en.jpg" width="1932" height="1458" alt="" loading="lazy" />
+  </section>
+
+  <section>
+    <h2 data-t="numH"></h2>
+    <table><tbody id="nums"></tbody></table>
+  </section>
+
+  <section>
+    <h2 data-t="repH"></h2>
+    <p data-t="repNeed"></p>
+<pre><code id="cmds"></code></pre>
+    <p class="note" data-t="repNote"></p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p data-t="credit1"></p>
+    <p data-t="credit2"></p>
+    <p data-t="license"></p>
+  </div>
+</footer>
+
+<script>
+'use strict';
+const REPO = 'https://github.com/DDChen666/civilization-film';
+const T = {
+  tc: {
+    htmlLang: 'zh-Hant', suffix: 'zh-TW', gif: 'tc', brand: '人類大歷史 · Civilization',
+    title: '人類大歷史', title2: 'CIVILIZATION　·　149 秒',
+    lede: '一部人類文明的短片。畫面全部用程式畫，配樂全部用程式寫。',
+    sub: '從四萬年前岩壁上的一個手印開始，一個鏡頭一路往後退，直到看見整顆地球。人類 176 項發明、建設與發現跟著拍子出現，每一項都落在它真正發生的地點。',
+    play: '▶　在瀏覽器裡播放', download: '下載 1080p',
+    cap: '前 99 秒以 11 倍速播放。從手印到地球是同一個鏡頭，中間沒有剪接。',
+    madeH: '這部片怎麼做出來',
+    p1h: 'Claude Code 製作', p1: '畫面、配樂、字幕和里程碑清單，全部由 Claude Opus 5.5 在 Claude Code 裡完成。導演欸不是負責提出方向，並在每個關口看片、給回饋。前後大約四個半小時。',
+    p2h: '沒有使用任何素材', p2: '沒有圖片、影片、3D 模型、音效取樣，也沒有現成的音樂。地圖來自公有領域的 Natural Earth，字體使用開源的思源宋體和 EB Garamond。',
+    p3h: '聲音和畫面共用一份時間表', p3: '先寫好配樂，同時輸出每個鼓點、每個主題音的時間。畫面只讀這份時間表，程式裡沒有任何手寫的秒數。',
+    p4h: '可以完全重現', p4: '同一份程式每次輸出，配樂逐位元相同，畫面逐格相同。「在瀏覽器裡播放」用的就是輸出影片的同一頁，每一格在你的電腦上即時畫出來。',
+    d1: '製作過程', d1s: '導演每次說了什麼、Claude 怎麼判斷、哪些決定被推翻、每一關的前後對照',
+    d2: '技術說明', d2s: '一個鏡頭怎麼跨越 7.5 個數量級、里程碑怎麼對上拍子、配樂怎麼一層層疊上去',
+    d3: '176 個里程碑與查證', d3s: '每一項的年份、地點、三種語言的名稱，以及查證狀態',
+    stillsH: '畫面', numH: '幾個數字',
+    nums: [['長度', '2 分 29 秒，140 BPM，C 小調'], ['里程碑', '176 項：東亞與南亞約 54、歐洲約 61、中東與非洲約 20、美洲與太平洋約 41'],
+      ['奇觀', '15 個三維線稿場景，有名的建築都依真實尺寸建模'], ['鏡頭距離', '從 0.74 公尺到 26,000 公里，一個鏡頭連續推過去'],
+      ['程式', '約 3,800 行 JavaScript 和 Python，不用任何框架'], ['音畫同步（實測）', '切鏡有 95% 落在拍點上（隨機擺放只會有 16%）；最強的 10 個重音裡，9 個有畫面回應'],
+      ['響度', '−14 LUFS，真峰值 −2.5 dBTP']],
+    repH: '從零重現', repNeed: '需要：Node.js 18 以上、Python 3.10 以上、ffmpeg、Google Chrome。',
+    cmds: ['git clone https://github.com/DDChen666/civilization-film.git', 'cd civilization-film', 'npm install', 'pip install -r requirements.txt',
+      'python3 score.py        # 合成配樂（約 20 秒）', 'npm run preview         # 先試做 10 秒（約 1 分鐘）', 'npm run render:tc       # 整片繁體版（Apple M3 約 15 分鐘）'],
+    repNote: '公開前在空資料夾照這些步驟做過一次：重新合成的配樂與發行版逐位元相同；10 秒試做與發行版逐格比對，平均 PSNR 45 dB。',
+    credit1: '導演：欸不是（<a href="https://space.bilibili.com/353565208">Bilibili</a>・<a href="https://x.com/chen79639ddc">X</a>・<a href="https://github.com/DDChen666">GitHub</a>）',
+    credit2: '程式、畫面、配樂、文字：Claude Opus 5.5（Anthropic），在 Claude Code 中製作',
+    license: '程式碼 <a href="' + REPO + '/blob/main/LICENSE">MIT</a>・影片與配樂 <a href="' + REPO + '/blob/main/LICENSE-MEDIA.md">CC BY 4.0</a>・字體 SIL OFL・地圖 Natural Earth（公有領域）',
+  },
+  sc: {
+    htmlLang: 'zh-Hans', suffix: 'zh-CN', gif: 'sc', brand: '人类大历史 · Civilization',
+    title: '人类大历史', title2: 'CIVILIZATION　·　149 秒',
+    lede: '一部人类文明的短片。画面全部用代码绘制，配乐全部用代码编写。',
+    sub: '从四万年前岩壁上的一个手印开始，一个镜头一路往后退，直到看见整颗地球。人类 176 项发明、建设与发现跟着节拍出现，每一项都落在它真正发生的地点。',
+    play: '▶　在浏览器里播放', download: '下载 1080p',
+    cap: '前 99 秒以 11 倍速播放。从手印到地球是同一个镜头，中间没有剪辑。',
+    madeH: '这部片是怎么做出来的',
+    p1h: 'Claude Code 制作', p1: '画面、配乐、字幕和里程碑清单，全部由 Claude Opus 5.5 在 Claude Code 里完成。导演欸不是负责提出方向，并在每个关口看片、给反馈。前后大约四个半小时。',
+    p2h: '没有使用任何素材', p2: '没有图片、视频、3D 模型、音效采样，也没有现成的音乐。地图来自公有领域的 Natural Earth，字体使用开源的思源宋体和 EB Garamond。',
+    p3h: '声音和画面共用一份时间表', p3: '先写好配乐，同时输出每个鼓点、每个主题音的时间。画面只读这份时间表，代码里没有任何手写的秒数。',
+    p4h: '可以完全复现', p4: '同一份代码每次输出，配乐逐位相同，画面逐帧相同。“在浏览器里播放”用的就是输出视频的同一页，每一帧在你的电脑上实时画出来。',
+    d1: '制作过程', d1s: '导演每次说了什么、Claude 怎么判断、哪些决定被推翻、每一关的前后对照',
+    d2: '技术说明', d2s: '一个镜头怎么跨越 7.5 个数量级、里程碑怎么对上节拍、配乐怎么一层层叠上去',
+    d3: '176 个里程碑与核实', d3s: '每一项的年份、地点、三种语言的名称，以及核实状态',
+    stillsH: '画面', numH: '几个数字',
+    nums: [['长度', '2 分 29 秒，140 BPM，C 小调'], ['里程碑', '176 项：东亚与南亚约 54、欧洲约 61、中东与非洲约 20、美洲与太平洋约 41'],
+      ['奇观', '15 个三维线稿场景，有名的建筑都按真实尺寸建模'], ['镜头距离', '从 0.74 米到 26,000 公里，一个镜头连续推过去'],
+      ['代码', '约 3,800 行 JavaScript 和 Python，不用任何框架'], ['音画同步（实测）', '切镜有 95% 落在节拍上（随机摆放只会有 16%）；最强的 10 个重音里，9 个有画面回应'],
+      ['响度', '−14 LUFS，真峰值 −2.5 dBTP']],
+    repH: '从零复现', repNeed: '需要：Node.js 18 以上、Python 3.10 以上、ffmpeg、Google Chrome。',
+    cmds: ['git clone https://github.com/DDChen666/civilization-film.git', 'cd civilization-film', 'npm install', 'pip install -r requirements.txt',
+      'python3 score.py        # 合成配乐（约 20 秒）', 'npm run preview         # 先试做 10 秒（约 1 分钟）', 'npm run render:sc       # 整片简体版（Apple M3 约 15 分钟）'],
+    repNote: '公开前在空文件夹按这些步骤做过一次：重新合成的配乐与发行版逐位相同；10 秒试做与发行版逐帧比对，平均 PSNR 45 dB。',
+    credit1: '导演：欸不是（<a href="https://space.bilibili.com/353565208">Bilibili</a>・<a href="https://x.com/chen79639ddc">X</a>・<a href="https://github.com/DDChen666">GitHub</a>）',
+    credit2: '代码、画面、配乐、文字：Claude Opus 5.5（Anthropic），在 Claude Code 中制作',
+    license: '代码 <a href="' + REPO + '/blob/main/LICENSE">MIT</a>・视频与配乐 <a href="' + REPO + '/blob/main/LICENSE-MEDIA.md">CC BY 4.0</a>・字体 SIL OFL・地图 Natural Earth（公有领域）',
+  },
+  en: {
+    htmlLang: 'en', suffix: 'en', gif: 'en', brand: 'Civilization · 人類大歷史',
+    title: 'Civilization', title2: '人類大歷史　·　149 SECONDS',
+    lede: 'A short film about human civilization. Every frame is drawn by code, and every note of the score is written by code.',
+    sub: 'It opens on a 40,000-year-old hand stencil on a cave wall. A single camera keeps pulling back until the whole Earth is in view. Along the way, 176 human inventions, buildings and discoveries land on the beat, each one at the place where it actually happened.',
+    play: '▶  Play in your browser', download: 'Download 1080p',
+    cap: 'The first 99 seconds at 11× speed. From the hand to the Earth it is one continuous shot, with no cuts.',
+    madeH: 'How it was made',
+    p1h: 'Made in Claude Code', p1: 'Claude Opus 5.5, working in Claude Code, made all of the visuals, the music, the on-screen text and the milestone list. The director, 欸不是, set the direction and reviewed the film at each checkpoint. About four and a half hours in all.',
+    p2h: 'No assets at all', p2: 'No images, video, 3D models, sound samples or stock music. The map data is public-domain Natural Earth, and the fonts are open-source Noto Serif and EB Garamond.',
+    p3h: 'Sound and picture share one timeline', p3: 'The score is written first, and it exports the time of every drum hit and theme note. The picture reads only that timeline, so there is not a single hand-typed second in the code.',
+    p4h: 'Fully reproducible', p4: 'Every render of the same code produces a bit-identical score and identical frames. "Play in your browser" runs the same page the video was rendered from, drawing every frame live on your machine.',
+    d1: 'Making of', d1s: 'What the director said at each step, how Claude decided, which decisions were overturned, and before/after comparisons',
+    d2: 'How it works', d2s: 'How one camera covers 7.5 orders of magnitude, how milestones lock to the beat, and how the score builds layer by layer',
+    d3: 'The 176 milestones', d3s: 'Year, place and names in three languages for every milestone, plus its fact-check status',
+    stillsH: 'Stills', numH: 'By the numbers',
+    nums: [['Length', '2 min 29 s, 140 BPM, C minor'], ['Milestones', '176: East and South Asia about 54, Europe about 61, Middle East and Africa about 20, the Americas and the Pacific about 41'],
+      ['Wonders', '15 line-drawn 3D scenes, with every named building modeled at real scale'], ['Camera distance', 'From 0.74 m to 26,000 km, in one continuous move'],
+      ['Code', 'About 3,800 lines of JavaScript and Python, with no frameworks'], ['A/V sync (measured)', '95% of cuts land on a beat (16% if placed at random). Of the 10 strongest accents, 9 get a visual response'],
+      ['Loudness', '−14 LUFS, true peak −2.5 dBTP']],
+    repH: 'Reproduce it', repNeed: 'You need Node.js 18+, Python 3.10+, ffmpeg and Google Chrome.',
+    cmds: ['git clone https://github.com/DDChen666/civilization-film.git', 'cd civilization-film', 'npm install', 'pip install -r requirements.txt',
+      'python3 score.py        # synthesize the score (~20 s)', 'npm run preview         # try 10 seconds first (~1 min)', 'npm run render:en       # the full film in English (~15 min on an Apple M3)'],
+    repNote: 'Verified before release from an empty folder: the regenerated score is bit-identical to the released one, and a 10-second test render matches the released video frame by frame at an average PSNR of 45 dB.',
+    credit1: 'Director: 欸不是 (<a href="https://space.bilibili.com/353565208">Bilibili</a> · <a href="https://x.com/chen79639ddc">X</a> · <a href="https://github.com/DDChen666">GitHub</a>)',
+    credit2: 'Code, visuals, music and text: Claude Opus 5.5 (Anthropic), made in Claude Code',
+    license: 'Code <a href="' + REPO + '/blob/main/LICENSE">MIT</a> · Film and score <a href="' + REPO + '/blob/main/LICENSE-MEDIA.md">CC BY 4.0</a> · Fonts SIL OFL · Maps Natural Earth (public domain)',
+  },
+};
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const q = new URLSearchParams(location.search);
+const guess = () => { const n = (navigator.language || '').toLowerCase(); return n.startsWith('zh') ? (/(cn|sg|hans)/.test(n) ? 'sc' : 'tc') : 'en'; };
+let lang = ['tc', 'sc', 'en'].includes(q.get('lang')) ? q.get('lang') : (store.get('civ-lang') || guess());
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function apply() {
+  const t = T[lang];
+  document.documentElement.lang = t.htmlLang;
+  document.title = t.brand;
+  document.querySelectorAll('[data-t]').forEach((el) => { el.innerHTML = t[el.dataset.t]; });
+  document.querySelectorAll('[data-doc]').forEach((el) => { el.href = `${REPO}/blob/main/docs/${el.dataset.doc}.${t.suffix}.md`; });
+  document.getElementById('playLink').href = `player.html?lang=${lang}`;
+  const gif = document.getElementById('heroGif'); gif.src = `docs/images/pullback_${t.gif}.gif`; gif.alt = t.cap;
+  const st = document.getElementById('stills'); st.src = `docs/images/stills_${t.gif}.jpg`; st.alt = t.stillsH;
+  document.getElementById('nums').innerHTML = t.nums.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+  document.getElementById('cmds').innerHTML = t.cmds.map(esc).join('\n');
+  document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+}
+document.querySelectorAll('.lang button').forEach((b) => (b.onclick = () => {
+  lang = b.dataset.lang; store.set('civ-lang', lang);
+  const u = new URL(location.href); u.searchParams.set('lang', lang); history.replaceState(null, '', u);
+  apply();
+}));
+apply();
+</script>
+</body>
+</html>

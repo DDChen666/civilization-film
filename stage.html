@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>Civilization — stage</title>
+<link rel="icon" href="data:," />
+<style>
+  html, body { margin: 0; background: #050406; overflow: hidden; }
+  canvas { display: block; width: 1920px; height: 1080px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="src/i18n.js"></script>
+<script src="lib/motion.js"></script>
+<script src="lib/music.js"></script>
+<script src="src/engine.js"></script>
+<script src="src/scene_cave.js"></script>
+<script src="src/scene_city.js"></script>
+<script src="src/scene_globe.js"></script>
+<script src="src/scene_wonders.js"></script>
+<script src="src/scene_wonders2.js"></script>
+<script src="src/scene_land.js"></script>
+<script src="src/milestones.js"></script>
+<script src="src/film.js"></script>
+<script>
+// 合成頁。兩種模式：
+//   正片（預設）：t 是配樂的時間，時間軸在 src/film.js，全部從 data/audio.json 來
+//   關鍵格（?kf=1）：t 的整數部分是第幾張關鍵格，小數部分是那一格裡的時間
+// 每一格先畫在一張看不見的畫布上，最後再貼到螢幕：這樣整個畫面可以一起縮放、震動、閃白。
+const W = 1920, H = 1080;
+const q = new URLSearchParams(location.search);
+const SCALE = Math.max(1, Math.min(4, +(q.get('scale') || 1)));
+const KF = q.has('kf');
+const cv = document.getElementById('c'); cv.width = W * SCALE; cv.height = H * SCALE;
+const screen = cv.getContext('2d');
+const off = document.createElement('canvas'); off.width = W * SCALE; off.height = H * SCALE;
+const g = off.getContext('2d');
+const LY = E.makeLayers(W, H, SCALE);
+
+// ── 色板：顏色跟著歷史一個一個解鎖
+const C = { void: '#050406', bone: '#efe4cf', ochre: '#e8502a', ember: '#ff9340', gold: '#f6bd62', lapis: '#3f93e0', ice: '#8fd0ff' };
+const FONT = { serif: FONTF };
+
+// ── 左下角的讀數：一個字（這一層是什麼；英文版是一個詞）、年代、比例尺。slam：這個字剛砸下來（0..1）
+function readout(g, { glyph, era, len, label, alpha = 1, slam = 0, eraAlpha = 1, scaleAlpha = 1 }) {
+  glyph = TR(glyph); era = TR(era); label = TR(label);
+  const x = 104, y = H - 104;
+  g.save();
+  g.save(); g.translate(x + 210, y - 30); g.scale(1, 0.34);              // 字底下墊一塊很淡的暗：畫面很亮很密的時候字還讀得到
+  const bk = g.createRadialGradient(0, 0, 0, 0, 0, 430); bk.addColorStop(0, `rgba(5,4,6,${0.62 * alpha})`); bk.addColorStop(1, 'rgba(5,4,6,0)');
+  g.fillStyle = bk; g.fillRect(-430, -430, 860, 860); g.restore();
+  g.fillStyle = C.bone; g.strokeStyle = C.bone; g.textBaseline = 'alphabetic';
+  g.font = EN ? `500 46px ${FONT.serif}` : `500 76px ${FONT.serif}`; g.letterSpacing = EN ? '7px' : '0px';
+  const gw = g.measureText(glyph).width - (EN ? 7 : 0), dx = x + gw + 28;       // 字（或詞）有多寬，後面的東西就往右排
+  g.save(); g.translate(x + gw / 2, y - 28); g.scale(1 + 0.45 * slam, 1 + 0.45 * slam); g.globalAlpha = alpha; g.fillText(glyph, -gw / 2, EN ? 20 : 28); g.restore();
+  g.globalAlpha = alpha * 0.5; g.fillRect(dx, y - 68, 1, 72);
+  g.globalAlpha = alpha * 0.88 * eraAlpha; g.font = `400 ${EN ? 27 : 25}px ${FONT.serif}`;
+  g.letterSpacing = EN ? '1.5px' : '4px'; g.fillText(era, dx + 24, y - 42);
+  const bx = dx + 25, by = y - 9;
+  g.globalAlpha = alpha * 0.9 * scaleAlpha; g.lineWidth = 1.5; g.beginPath();
+  g.moveTo(bx, by - 6); g.lineTo(bx, by + 6); g.moveTo(bx, by); g.lineTo(bx + len, by); g.moveTo(bx + len, by - 6); g.lineTo(bx + len, by + 6); g.stroke();
+  g.globalAlpha = alpha * 0.7 * scaleAlpha; g.font = `400 ${EN ? 22 : 20}px ${FONT.serif}`; g.letterSpacing = EN ? '1px' : '3px'; g.fillText(label, bx + len + 18, by + 7);
+  g.restore();
+}
+/** 挑一個好讀的比例尺長度：回傳 {len(px), label} */
+function niceScale(pxPerM, want = 220) {
+  const m = want / pxPerM, p = Math.pow(10, Math.floor(Math.log10(m)));
+  const n = [1, 2, 5, 10].reduce((a, b) => (Math.abs(b * p - m) < Math.abs(a * p - m) ? b : a)) * p;
+  const [k, unit] = n >= 1000 ? [1e-3, UNITS[3]] : n >= 1 ? [1, UNITS[2]] : n >= 0.01 ? [100, UNITS[1]] : [1000, UNITS[0]];
+  const val = n * k;
+  return { len: n * pxPerM, label: `${val >= 1000 ? val.toLocaleString('en-US') : +val.toPrecision(3)} ${unit}` };
+}
+function grade(g, { vig = 0.55 } = {}) {
+  const v = g.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.75);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(2,1,3,${vig})`);
+  g.fillStyle = v; g.fillRect(0, 0, W, H);
+}
+const CTX = { C, readout, niceScale, grade };
+
+// ── 關鍵格（?kf=1）
+const FRAMES = [
+  function hand(t) {
+    const back = M.ease.cubicInOut(E.clamp(t)) * 0.12;
+    const cam = E.makeCam({ eye: [0.0, -0.74 - back, -0.01], target: [0.0, 0, 0.005], fov: 36 });
+    Cave.drawWall(g, cam);
+    LY.clear(LY.A);
+    Cave.drawHands(LY.A.g, cam, {});
+    LY.composite(g, LY.A, { glow: [[22, 0.22], [3, 0.2]], sharp: 1 });
+    Cave.drawLight(g, cam, { flick: Math.sin(t * 9) * 0.5 });
+    grade(g, { vig: 0.35 });
+    readout(g, { glyph: '手', era: '約四萬年前', ...niceScale(cam.foc / cam.dist, 200) });
+  },
+  (t) => City.frame(g, LY, t, CTX),
+  (t) => Globe.frameRegion(g, LY, t, CTX),
+  (t) => Globe.frameQuiet(g, LY, t, CTX),
+  (t) => Globe.frameFinale(g, LY, t, CTX),
+  (t) => Wonders.giza(g, LY, t, CTX, { u: t }),
+  (t) => Wonders.skyline(g, LY, t, CTX, { u: t }),
+  (t) => Wonders.saturn(g, LY, t, CTX, { u: t, time: t }),
+  (t) => Wonders.tiantan(g, LY, t, CTX, { u: t }),
+  (t) => Wonders.taj(g, LY, t, CTX, { u: t, time: t }),
+  ...['stonehenge', 'parthenon', 'greatwall', 'colosseum', 'angkor', 'eiffel', 'iss', 'chip'].map((n) => (t) => Wonders[n](g, LY, t, CTX, { u: t, time: t })),
+];
+let META = { dur: FRAMES.length, fps: 30 };
+
+function draw(t) {
+  g.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.filter = 'none';
+  g.fillStyle = C.void; g.fillRect(0, 0, W, H);
+  let fx = { zoom: 0, dx: 0, dy: 0, flash: 0 };
+  if (KF) { const k = Math.min(FRAMES.length - 1, Math.floor(t + 1e-6)); FRAMES[k](t - k); }
+  else fx = Film.draw(g, LY, t, CTX);
+  // 貼到螢幕：整個畫面一起縮放、震動、閃白
+  const z = 1 + fx.zoom, w = W * SCALE, h = H * SCALE;
+  screen.setTransform(1, 0, 0, 1, 0, 0); screen.globalAlpha = 1; screen.fillStyle = C.void; screen.fillRect(0, 0, w, h);
+  screen.setTransform(z, 0, 0, z, (w / 2) * (1 - z) + fx.dx * SCALE, (h / 2) * (1 - z) + fx.dy * SCALE);
+  screen.drawImage(off, 0, 0);
+  if (fx.flash > 0.003) { screen.setTransform(1, 0, 0, 1, 0, 0); screen.globalAlpha = Math.min(1, fx.flash); screen.fillStyle = '#fff4e2'; screen.fillRect(0, 0, w, h); screen.globalAlpha = 1; }
+}
+
+window.__seek = (t) => draw(t);
+window.__events = () => (KF ? [] : Film.CUTS.map((t) => ({ t, kind: 'cut' })));
+window.__ready = (async () => {
+  const ff = new FontFace('CivSerif', `url(${FONTFILE})`, { weight: EN ? '400 800' : '200 900' });      // 開源字體（SIL OFL），三種語言各一套
+  await ff.load(); document.fonts.add(ff); await document.fonts.ready;
+  const [geo, audio] = await Promise.all([fetch('data/geo.json').then((r) => r.json()), fetch('data/audio.json').then((r) => r.json())]);
+  Cave.init(); City.init(); Globe.init(geo); Wonders.init(); Land.init();
+  if (!KF) { Film.init(audio); META = { dur: audio.duration, fps: 30 }; }
+  window.__meta = META;
+  draw(+(q.get('t') || 0));
+  return true;
+})();
+</script>
+</body>
+</html>

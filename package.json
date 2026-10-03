@@ -1,0 +1,19 @@
+{
+  "name": "civilization-film",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A 149-second film about human civilization, drawn and scored entirely in code by Claude Opus 5.5 in Claude Code.",
+  "license": "MIT",
+  "scripts": {
+    "score": "python3 score.py",
+    "preview": "node render.mjs video --html \"stage.html?lang=en\" --from 99.43 --to 109.71 --audio audio/score.wav --out out/preview_en.mp4",
+    "render:tc": "node render.mjs video --html \"stage.html?lang=tc\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_zh-TW.mp4",
+    "render:sc": "node render.mjs video --html \"stage.html?lang=sc\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_zh-CN.mp4",
+    "render:en": "node render.mjs video --html \"stage.html?lang=en\" --sub 4 --workers 6 --audio audio/score.wav --out out/civilization_en.mp4",
+    "check": "sh tools/check.sh"
+  },
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
